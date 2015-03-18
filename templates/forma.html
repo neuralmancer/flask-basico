@@ -1,0 +1,20 @@
+<html>
+<head>
+  <title> ejemplo de template </title>
+</head>
+<body>
+<form method="POST" action="">
+    {{ form.nombre.label }} {{ form.nombre(size=20) }}
+    {% for error in form.nombre.errors %}
+      {{ error }}
+    {% endfor %}
+    {{ form.submit() }}
+    {{ form.hidden_tag() }}
+</form>
+    <br>
+    {% if nombre %}
+      <h1> Hola {{ nombre }}
+    {% endif %}
+
+</body>
+</html>
