@@ -8,9 +8,9 @@ bootstrap = Bootstrap(app)
 def index():
     return render_template("index.html")
 
-@app.route('/mensaje')
-def mensaje():
-    return "Escribe un mensaje aquí"
+@app.route('/about')
+def about():
+    return render_template("about.html")
 
 @app.route('/usuario/<usuario>')
 def user_name(usuario):
