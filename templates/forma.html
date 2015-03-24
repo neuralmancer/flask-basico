@@ -8,6 +8,7 @@
     {% for error in form.nombre.errors %}
       {{ error }}
     {% endfor %}
+    <br>
     {{ form.submit() }}
     {{ form.hidden_tag() }}
 </form>

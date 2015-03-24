@@ -1,8 +1,9 @@
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template
 #from flask.ext.bootstrap import Bootstrap
 from flask.ext.wtf import Form
 from wtforms import StringField, SubmitField
-from wtforms.validators import Required
+from wtforms.validators import Required, Length
 
 from flask.ext.sqlalchemy import SQLAlchemy
 
@@ -12,26 +13,40 @@ app.config['SECRET_KEY'] = 'cadena_secreta'
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///datos.sqlite"
 
 db = SQLAlchemy(app)
-
 #bootstrap = Bootstrap(app)
 
 class NameForm(Form):
-    nombre = StringField('Escribe tu nombre:', validators=[Required()])
+    nombre = StringField('Escribe tu nombre:', validators=[Required(),
+                                                            Length(1,16)])
     submit = SubmitField('Enviar!')
 
 class Usuario(db.Model):
     __tablename__ = "usuarios"
     id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(20), index=True, unique=True)
+    nombre = db.Column(db.String(16), index=True, unique=True)
+    password_hash = db.Column(db.String(64))
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    @staticmethod
+    def registra(usuario, password):
+        user = Usuario(nombre=usuario)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        return user
 
     def __repr__(self):
-        return "{}-{}".format(self.id, self.nombre)
+        return "{}".format(self.nombre)
 
 
 @app.route('/')
 def index():
     return "Hola Mundo!"
-    #return render_template("index.html")
 
 #ejemplo de forma
 @app.route('/forma', methods=['GET', 'POST'])
@@ -62,7 +77,6 @@ def todos_sql():
         lst.append(lista)
     return render_template("todos.html", lst=lst)
 
-
 #template que se llena desde un archivo de texto
 @app.route('/archivo')
 def archivo():
@@ -86,5 +100,4 @@ def pagina_no_encontrada(e):
 
 if __name__ == "__main__":
     db.create_all()
-    app.debug = True
-    app.run()
+    app.run(debug=True)
