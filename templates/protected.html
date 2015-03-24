@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Ejemplo de Login{% endblock %}
+
+{% block page_content %}
+    <h1>Área protegida</h1>
+    <p>solo visible por usuarios "logeados"</p>
+    <p>logeaste como: <b>{{ current_user.nombre }}</b>.</p>
+{% endblock %}

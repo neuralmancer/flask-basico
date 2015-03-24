@@ -1,26 +1,29 @@
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import Flask, render_template
-#from flask.ext.bootstrap import Bootstrap
+from flask import Flask, render_template, redirect, url_for, request
+from flask.ext.bootstrap import Bootstrap
 from flask.ext.wtf import Form
-from wtforms import StringField, SubmitField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import Required, Length
-
 from flask.ext.sqlalchemy import SQLAlchemy
+from flask.ext.login import LoginManager, UserMixin, login_user, logout_user, login_required
 
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'cadena_secreta'
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///datos.sqlite"
-
+bootstrap = Bootstrap(app)
 db = SQLAlchemy(app)
-#bootstrap = Bootstrap(app)
+lm = LoginManager(app)
+lm.login_view = 'login'
 
-class NameForm(Form):
-    nombre = StringField('Escribe tu nombre:', validators=[Required(),
-                                                            Length(1,16)])
-    submit = SubmitField('Enviar!')
 
-class Usuario(db.Model):
+class LoginForm(Form):
+    usuario = StringField("Usuario:", validators=[Required(), Length(1, 16)])
+    password = PasswordField('Contraseña', validators=[Required()])
+    recordarme = BooleanField("Recordarme")
+    submit = SubmitField("Entrar")
+
+class Usuario(UserMixin, db.Model):
     __tablename__ = "usuarios"
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(16), index=True, unique=True)
@@ -44,9 +47,35 @@ class Usuario(db.Model):
         return "{}".format(self.nombre)
 
 
+@lm.user_loader
+def load_user(id):
+    return Usuario.query.get(int(id))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        usr = Usuario.query.filter_by(nombre=form.usuario.data).first()
+        if usr is None or not usr.verify_password(form.password.data):
+            return redirect(url_for('login', **request.args))
+        login_user(usr, form.password.data)
+        return redirect(request.args.get('next') or url_for('index'))
+    return render_template('login.html', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
 @app.route('/')
 def index():
-    return "Hola Mundo!"
+    return render_template('index.html')
+
+@app.route('/protected')
+@login_required
+def protected():
+    return render_template('protected.html')
 
 #ejemplo de forma
 @app.route('/forma', methods=['GET', 'POST'])
@@ -77,6 +106,9 @@ def todos_sql():
         lst.append(lista)
     return render_template("todos.html", lst=lst)
 
+
+
+
 #template que se llena desde un archivo de texto
 @app.route('/archivo')
 def archivo():
@@ -100,4 +132,6 @@ def pagina_no_encontrada(e):
 
 if __name__ == "__main__":
     db.create_all()
+    if Usuario.query.filter_by(nombre='omar').first() is None:
+        Usuario.registra('omar','muppets')
     app.run(debug=True)
