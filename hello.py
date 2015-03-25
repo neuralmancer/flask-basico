@@ -107,8 +107,6 @@ def todos_sql():
     return render_template("todos.html", lst=lst)
 
 
-
-
 #template que se llena desde un archivo de texto
 @app.route('/archivo')
 def archivo():
@@ -132,6 +130,4 @@ def pagina_no_encontrada(e):
 
 if __name__ == "__main__":
     db.create_all()
-    if Usuario.query.filter_by(nombre='omar').first() is None:
-        Usuario.registra('omar','muppets')
     app.run(debug=True)
